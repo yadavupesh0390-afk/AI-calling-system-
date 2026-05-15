@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>AI Calling Dashboard</title>
+
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0f172a;
+      font-family: Arial;
+      color: white;
+    }
+
+    .container {
+      padding: 40px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 15px;
+      max-width: 500px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin-top: 20px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      margin-top: 25px;
+      border-radius: 10px;
+      border: none;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .status {
+      margin-top: 25px;
+      background: #334155;
+      padding: 14px;
+      border-radius: 10px;
+    }
+
+    h1 {
+      font-size: 42px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #94a3b8;
+      margin-bottom: 40px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+
+    function App() {
+
+      const [campaignName, setCampaignName] = React.useState("");
+      const [phoneNumber, setPhoneNumber] = React.useState("");
+      const [status, setStatus] = React.useState("Idle");
+
+      const startCampaign = async () => {
+
+        try {
+
+          setStatus("Connecting Backend...");
+
+          const response = await fetch(
+            "https://ai-calling-system-6kh9.onrender.com/health"
+          );
+
+          const data = await response.json();
+
+          if (data.success) {
+            setStatus("Campaign Started Successfully");
+          } else {
+            setStatus("Backend Error");
+          }
+
+        } catch (error) {
+
+          console.log(error);
+
+          setStatus("Backend Not Connected");
+        }
+      };
+
+      return (
+        <div className="container">
+
+          <h1>AI Calling Dashboard</h1>
+
+          <p>
+            Production Ready AI / IVR Calling System
+          </p>
+
+          <div className="card">
+
+            <h2>Create Calling Campaign</h2>
+
+            <input
+              type="text"
+              placeholder="Campaign Name"
+              value={campaignName}
+              onChange={(e) => setCampaignName(e.target.value)}
+            />
+
+            <input
+              type="text"
+              placeholder="Phone Number"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+            />
+
+            <button onClick={startCampaign}>
+              Start Calling Campaign
+            </button>
+
+            <div className="status">
+              Status: {status}
+            </div>
+
+          </div>
+
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+  </script>
+
+</body>
+
+</html>

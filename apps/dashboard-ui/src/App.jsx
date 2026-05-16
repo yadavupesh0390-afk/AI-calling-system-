@@ -1,12 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-function LoginPage() {
-  return <h1>Login Page Working</h1>;
-}
-
-function DashboardPage() {
-  return <h1>Dashboard Page Working</h1>;
-}
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
 
 function App() {
   return (

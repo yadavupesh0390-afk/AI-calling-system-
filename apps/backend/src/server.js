@@ -1,5 +1,5 @@
 require('dotenv').config();
-
+const authRoutes = require('./routes/authRoutes');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -31,7 +31,7 @@ app.use(morgan('dev'));
 | Routes
 |--------------------------------------------------------------------------
 */
-
+app.use('/api/auth', authRoutes);
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,

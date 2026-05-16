@@ -89,7 +89,30 @@ const DashboardPage = () => {
         <Card title="Conversion Rate" value={`${stats.conversionRate}%`} />
 
       </div>
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+  <h2 className="text-xl font-bold mb-4">⚡ Campaign Controls</h2>
 
+  <button
+    onClick={() => campaignService.startCampaign("YOUR_CAMPAIGN_ID")}
+    className="w-full bg-green-500 p-3 rounded-xl font-bold mb-3 hover:scale-105 transition"
+  >
+    ▶ Start Calling
+  </button>
+
+  <button
+    onClick={() => campaignService.stopCampaign("YOUR_CAMPAIGN_ID")}
+    className="w-full bg-red-500 p-3 rounded-xl font-bold mb-3 hover:scale-105 transition"
+  >
+    ⛔ Stop Calling
+  </button>
+
+  <button
+    onClick={() => navigate("/campaigns")}
+    className="w-full bg-purple-500 p-3 rounded-xl font-bold hover:scale-105 transition"
+  >
+    📁 View Campaigns
+  </button>
+</div>
       {/* DETAILS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 

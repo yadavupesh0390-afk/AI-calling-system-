@@ -57,31 +57,48 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-700 relative overflow-hidden">
 
-        <h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">
+      {/* Background Glow */}
+      <div className="absolute w-96 h-96 bg-pink-500 rounded-full blur-3xl opacity-20 top-0 left-0"></div>
+      <div className="absolute w-96 h-96 bg-blue-500 rounded-full blur-3xl opacity-20 bottom-0 right-0"></div>
+
+      {/* Login Card */}
+      <div className="relative z-10 bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl p-8 w-full max-w-md">
+
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg">
+            <span className="text-4xl">📞</span>
+          </div>
+        </div>
+
+        {/* Heading */}
+        <h1 className="text-4xl font-extrabold text-white text-center mb-2">
           AI Calling System
         </h1>
 
-        <p className="text-gray-600 text-center mb-8">
-          Lead Generation Platform
+        <p className="text-center text-purple-100 mb-8">
+          Smart Lead Generation Dashboard
         </p>
 
+        {/* Error */}
+        {error && (
+          <div className="bg-red-500/20 border border-red-400 text-red-100 px-4 py-3 rounded-xl mb-6">
+            {error}
+          </div>
+        )}
+
+        {/* Form */}
         <form
           onSubmit={handleSubmit}
-          className="space-y-6"
+          className="space-y-5"
         >
 
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
+          {/* Email */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
-              Email
+            <label className="block text-white mb-2 font-medium">
+              Email Address
             </label>
 
             <input
@@ -89,14 +106,15 @@ const LoginPage = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              placeholder="your@email.com"
+              placeholder="Enter your email"
               required
+              className="w-full px-5 py-3 rounded-xl bg-white/20 border border-white/20 text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-cyan-400"
             />
           </div>
 
+          {/* Password */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-white mb-2 font-medium">
               Password
             </label>
 
@@ -105,21 +123,43 @@ const LoginPage = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              placeholder="••••••••"
+              placeholder="Enter your password"
               required
+              className="w-full px-5 py-3 rounded-xl bg-white/20 border border-white/20 text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
           </div>
 
+          {/* Remember + Forgot */}
+          <div className="flex justify-between items-center text-sm text-purple-100">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" />
+              Remember me
+            </label>
+
+            <button
+              type="button"
+              className="hover:text-cyan-300 transition"
+            >
+              Forgot Password?
+            </button>
+          </div>
+
+          {/* Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:scale-105 transition-transform duration-300 text-white font-bold shadow-lg"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
 
         </form>
+
+        {/* Footer */}
+        <div className="mt-8 text-center text-purple-100 text-sm">
+          Powered by AI Automation 🚀
+        </div>
+
       </div>
     </div>
   );

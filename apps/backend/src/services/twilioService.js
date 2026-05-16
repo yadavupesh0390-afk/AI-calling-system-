@@ -1,8 +1,8 @@
 const twilio = require('twilio');
 
 const logger = require('../utils/logger');
-const { CALLING } = require('../../../shared/constants/leadStatus');
-const validatePhone = require('../../../shared/validators/phoneValidator');
+//const { CALLING } = require('../../../shared/constants/leadStatus');
+//const validatePhone = require('../../../shared/validators/phoneValidator');
 
 const Lead = require('../models/Lead');
 const Campaign = require('../models/Campaign');

@@ -1,25 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import api from '../services/api';
+import React, { useEffect, useState } from "react";
+import api from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 const DashboardPage = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await api.get(
-          '/analytics/dashboard'
-        );
-
+        const response = await api.get("/analytics/dashboard");
         setStats(response.data.statistics || {});
-
       } catch (error) {
-        console.error(
-          'Failed to fetch statistics:',
-          error
-        );
-
+        console.error("Failed to fetch statistics:", error);
       } finally {
         setLoading(false);
       }
@@ -30,112 +24,101 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl text-gray-600">
-          Loading...
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-700 text-white">
+        <div className="text-xl animate-pulse">Loading Dashboard...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-700 text-white p-6">
 
-      <h1 className="text-4xl font-bold text-gray-800 mb-8">
-        Dashboard
-      </h1>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-4xl font-bold">📊 AI Calling Dashboard</h1>
+          <p className="text-purple-200">Welcome back, manage your campaigns</p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <button
+          onClick={() => navigate("/create-campaign")}
+          className="bg-cyan-400 text-black px-5 py-2 rounded-xl font-bold hover:scale-105 transition"
+        >
+          + Create Campaign
+        </button>
+      </div>
 
-        <StatCard
-          title="Total Leads"
-          value={stats?.totalLeads}
-          color="blue"
-        />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
 
-        <StatCard
-          title="Answered Calls"
-          value={stats?.answeredCalls}
-          color="green"
-        />
-
-        <StatCard
-          title="Interested"
-          value={stats?.interestedLeads}
-          color="purple"
-        />
-
-        <StatCard
-          title="Conversion Rate"
-          value={stats?.conversionRate}
-          color="orange"
-        />
+        <Card title="Total Leads" value={stats?.totalLeads} />
+        <Card title="Answered Calls" value={stats?.answeredCalls} />
+        <Card title="Interested Leads" value={stats?.interestedLeads} />
+        <Card title="Conversion Rate" value={`${stats?.conversionRate || 0}%`} />
 
       </div>
 
+      {/* Lead Status Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        <div className="bg-white rounded-lg shadow p-6">
-
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            Lead Status
-          </h2>
+        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-xl">
+          <h2 className="text-xl font-bold mb-4">📞 Lead Status</h2>
 
           <div className="space-y-4">
 
-            <div className="flex justify-between">
-              <span>Interested</span>
-
-              <span className="font-bold">
-                {stats?.interestedLeads || 0}
-              </span>
-            </div>
-
-            <div className="flex justify-between">
-              <span>Callback Later</span>
-
-              <span className="font-bold">
-                {stats?.callbackLater || 0}
-              </span>
-            </div>
-
-            <div className="flex justify-between">
-              <span>Not Interested</span>
-
-              <span className="font-bold">
-                {stats?.notInterested || 0}
-              </span>
-            </div>
+            <StatusRow label="Interested" value={stats?.interestedLeads} color="text-green-300" />
+            <StatusRow label="Callback Later" value={stats?.callbackLater} color="text-yellow-300" />
+            <StatusRow label="Not Interested" value={stats?.notInterested} color="text-red-300" />
 
           </div>
         </div>
+
+        {/* Right Panel */}
+        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-xl">
+          <h2 className="text-xl font-bold mb-4">⚡ Quick Actions</h2>
+
+          <div className="space-y-3">
+
+            <button
+              onClick={() => navigate("/create-campaign")}
+              className="w-full bg-cyan-400 text-black p-3 rounded-xl font-bold hover:scale-105 transition"
+            >
+              Create New Campaign
+            </button>
+
+            <button className="w-full bg-purple-500 p-3 rounded-xl font-bold hover:scale-105 transition">
+              View Leads
+            </button>
+
+            <button className="w-full bg-pink-500 p-3 rounded-xl font-bold hover:scale-105 transition">
+              Analytics Report
+            </button>
+
+          </div>
+        </div>
+
       </div>
+
     </div>
   );
 };
 
-const StatCard = ({
-  title,
-  value,
-  color
-}) => {
-
-  const colorMap = {
-    blue: 'bg-blue-100 text-blue-800',
-    green: 'bg-green-100 text-green-800',
-    purple: 'bg-purple-100 text-purple-800',
-    orange: 'bg-orange-100 text-orange-800'
-  };
-
+/* ---------------- CARD ---------------- */
+const Card = ({ title, value }) => {
   return (
-    <div className={`rounded-lg p-6 ${colorMap[color]}`}>
-      <p className="text-sm font-medium">
-        {title}
-      </p>
+    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-lg hover:scale-105 transition">
+      <p className="text-sm text-purple-200">{title}</p>
+      <p className="text-3xl font-bold mt-2">{value || 0}</p>
+    </div>
+  );
+};
 
-      <p className="text-3xl font-bold mt-2">
-        {value || 0}
-      </p>
+/* ---------------- STATUS ROW ---------------- */
+const StatusRow = ({ label, value, color }) => {
+  return (
+    <div className="flex justify-between border-b border-white/10 pb-2">
+      <span className="text-white">{label}</span>
+      <span className={`font-bold ${color}`}>{value || 0}</span>
     </div>
   );
 };

@@ -27,18 +27,14 @@ app.use(morgan('dev'));
    ROUTES IMPORT
 ========================= */
 const authRoutes = require('./routes/auth');
-const campaignRoutes = require('./routes/campaign');
-const leadRoutes = require('./routes/lead');
+const campaignRoutes = require('./routes/campaigns'); // FIXED
+const leadRoutes = require('./routes/leads');
 const analyticsRoutes = require('./routes/analytics');
 
-/* =========================
-   ROUTES USE
-========================= */
 app.use('/api/auth', authRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/analytics', analyticsRoutes);
-
 /* =========================
    HEALTH CHECK
 ========================= */

@@ -1,55 +1,56 @@
 require('dotenv').config();
-const mongoose = require('mongoose');
-
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log("✅ MongoDB Connected");
-  })
-  .catch((err) => {
-    console.log("❌ MongoDB Error:", err.message);
-  });
-const authRoutes = require('./routes/auth');
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 
 const app = express();
 
-/*
-|--------------------------------------------------------------------------
-| Middlewares
-|--------------------------------------------------------------------------
-*/
+/* =========================
+   DB CONNECTION
+========================= */
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.log("❌ MongoDB Error:", err.message));
 
+/* =========================
+   MIDDLEWARES
+========================= */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(cors());
-
-app.use(
-  helmet({
-    crossOriginResourcePolicy: false
-  })
-);
-
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(morgan('dev'));
 
-/*
-|--------------------------------------------------------------------------
-| Routes
-|--------------------------------------------------------------------------
-*/
+/* =========================
+   ROUTES IMPORT
+========================= */
+const authRoutes = require('./routes/auth');
+const campaignRoutes = require('./routes/campaign');
+const leadRoutes = require('./routes/lead');
+const analyticsRoutes = require('./routes/analytics');
+
+/* =========================
+   ROUTES USE
+========================= */
 app.use('/api/auth', authRoutes);
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/leads', leadRoutes);
+app.use('/api/analytics', analyticsRoutes);
+
+/* =========================
+   HEALTH CHECK
+========================= */
 app.get('/', (req, res) => {
-  res.status(200).json({
+  res.json({
     success: true,
     message: 'AI Calling System Running Successfully'
   });
 });
 
 app.get('/health', (req, res) => {
-  res.status(200).json({
+  res.json({
     success: true,
     status: 'healthy',
     uptime: process.uptime(),
@@ -57,12 +58,9 @@ app.get('/health', (req, res) => {
   });
 });
 
-/*
-|--------------------------------------------------------------------------
-| 404 Handler
-|--------------------------------------------------------------------------
-*/
-
+/* =========================
+   404 HANDLER
+========================= */
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -70,12 +68,9 @@ app.use((req, res) => {
   });
 });
 
-/*
-|--------------------------------------------------------------------------
-| Error Handler
-|--------------------------------------------------------------------------
-*/
-
+/* =========================
+   ERROR HANDLER
+========================= */
 app.use((err, req, res, next) => {
   console.error('Server Error:', err);
 
@@ -86,12 +81,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-/*
-|--------------------------------------------------------------------------
-| Start Server
-|--------------------------------------------------------------------------
-*/
-
+/* =========================
+   START SERVER
+========================= */
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

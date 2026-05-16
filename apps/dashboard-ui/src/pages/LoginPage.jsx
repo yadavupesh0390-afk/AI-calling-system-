@@ -21,15 +21,28 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/login', formData);
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const response = await axios.post(
+    `${API_URL}/auth/login`,
+    formData
+  );
+
+  localStorage.setItem('token', response.data.token);
+  localStorage.setItem('user', JSON.stringify(response.data.user));
+
+  navigate('/dashboard');
+
+} catch (err) {
+  setError(
+    err.response?.data?.error ||
+    err.response?.data?.message ||
+    'Login failed'
+  );
+
+} finally {
+  setLoading(false);
+}
   };
 
   return (

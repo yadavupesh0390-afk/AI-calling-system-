@@ -1,4 +1,91 @@
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+html,
+body,
+#root{
+  width:100%;
+  min-height:100%;
+}
+
+body{
+  font-family:'Poppins', sans-serif;
+  background:
+    radial-gradient(circle at top left, #4f46e5 0%, transparent 30%),
+    radial-gradient(circle at bottom right, #ec4899 0%, transparent 30%),
+    linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+    
+  background-attachment:fixed;
+  color:white;
+  overflow-x:hidden;
+}
+
+/* Smooth */
+*{
+  scroll-behavior:smooth;
+}
+
+/* Glass Effect */
+.glass{
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.1);
+}
+
+/* Inputs */
+input{
+  transition:0.3s ease;
+}
+
+input:focus{
+  transform:scale(1.02);
+}
+
+/* Buttons */
+button{
+  cursor:pointer;
+  transition:all 0.3s ease;
+}
+
+button:hover{
+  transform:translateY(-2px);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{
+  width:8px;
+}
+
+::-webkit-scrollbar-track{
+  background:#111827;
+}
+
+::-webkit-scrollbar-thumb{
+  background:linear-gradient(#06b6d4,#3b82f6);
+  border-radius:20px;
+}
+
+/* Animation */
+@keyframes float {
+  0%{
+    transform:translateY(0px);
+  }
+
+  50%{
+    transform:translateY(-10px);
+  }
+
+  100%{
+    transform:translateY(0px);
+  }
+}
+
+.floating{
+  animation:float 4s ease-in-out infinite;
 }

@@ -1,89 +1,124 @@
 import React, { useState } from "react";
 import { campaignService } from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 const CreateCampaign = () => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [useAutoCampaign, setUseAutoCampaign] = useState(false);
 
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 🔥 VALIDATION
+    if (!file) {
+      alert("Please upload CSV or Excel file");
+      return;
+    }
 
     try {
       setLoading(true);
 
       let campaignId = null;
 
-      // 🟢 CASE 1: Manual Campaign Create
+      // 🟢 CREATE CAMPAIGN ONLY IF MANUAL
       if (!useAutoCampaign) {
         const res = await campaignService.createCampaign({
-          name,
-          description,
+          name: name || "Manual Campaign",
+          description: description || "Created from UI",
         });
 
-        campaignId = res.data.campaign._id;
+        campaignId = res?.data?.campaign?._id;
+
+        if (!campaignId) {
+          throw new Error("Campaign ID not received");
+        }
       }
 
-      // 🔵 CASE 2: Auto Campaign (backend will handle)
-      // campaignId remains null → backend will create default campaign
+      // 🟡 AUTO MODE FIX (IMPORTANT)
+      // if campaignId is null → backend MUST support auto-campaign
+      // otherwise fallback create
+      if (!campaignId) {
+        const res = await campaignService.createCampaign({
+          name: "Auto Campaign",
+          description: "Auto generated",
+        });
 
-      // 📤 Upload file (always allowed)
-      if (file) {
-        await campaignService.uploadPhoneNumbers(campaignId, file);
+        campaignId = res?.data?.campaign?._id;
       }
 
-      alert("Campaign & Leads Uploaded Successfully 🚀");
+      // 📤 UPLOAD LEADS
+      const formData = new FormData();
+      formData.append("file", file);
 
-      // reset
+      const uploadRes = await campaignService.uploadPhoneNumbers(
+        campaignId,
+        file
+      );
+
+      alert(
+        `🚀 Success!\nCampaign Ready & ${uploadRes.data.message}`
+      );
+
+      // RESET
       setName("");
       setDescription("");
       setFile(null);
 
+      // 🔥 GO TO CAMPAIGNS
+      navigate("/campaigns");
+
     } catch (err) {
-      console.log(err);
-      alert("Error creating campaign");
+      console.error(err);
+
+      alert(
+        err.response?.data?.error ||
+        err.message ||
+        "Something went wrong"
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-4">
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl w-[420px] shadow-xl"
+        className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-2xl w-[420px] shadow-2xl"
       >
 
-        <h2 className="text-2xl font-bold mb-5 text-center">
-          Create Campaign 🚀
+        <h2 className="text-2xl font-bold mb-6 text-center">
+          🚀 Create Campaign
         </h2>
 
-        {/* Auto Campaign Toggle */}
-        <label className="flex items-center gap-2 mb-4 text-sm">
+        {/* AUTO MODE */}
+        <label className="flex items-center gap-2 mb-4 text-sm text-gray-300">
           <input
             type="checkbox"
             checked={useAutoCampaign}
             onChange={() => setUseAutoCampaign(!useAutoCampaign)}
           />
-          Use Auto Campaign (no need to fill details)
+          Use Auto Campaign (system handles everything)
         </label>
 
-        {/* Campaign Name */}
+        {/* NAME + DESCRIPTION */}
         {!useAutoCampaign && (
           <>
             <input
-              className="w-full p-2 mb-3 text-black rounded"
+              className="w-full p-3 mb-3 rounded bg-white/10 text-white"
               placeholder="Campaign Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
 
             <textarea
-              className="w-full p-2 mb-3 text-black rounded"
+              className="w-full p-3 mb-3 rounded bg-white/10 text-white"
               placeholder="Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -91,30 +126,26 @@ const CreateCampaign = () => {
           </>
         )}
 
-        {/* File Upload */}
+        {/* FILE UPLOAD */}
         <input
           type="file"
           accept=".csv,.xlsx"
           onChange={(e) => setFile(e.target.files[0])}
-          className="mb-4"
+          className="w-full mb-4 text-sm"
         />
 
-        {/* Info Box */}
-        <div className="text-xs text-gray-300 mb-3">
-          📌 Upload Excel/CSV with phone numbers only<br />
-          📌 System will auto-start AI calling after upload
+        {/* INFO */}
+        <div className="text-xs text-gray-400 mb-4">
+          📌 CSV/Excel must contain phone numbers only<br />
+          📌 System will automatically start calling after upload
         </div>
 
-        {/* Submit Button */}
+        {/* BUTTON */}
         <button
-          className="bg-gradient-to-r from-blue-500 to-purple-600 w-full p-2 rounded font-bold hover:scale-105 transition"
           disabled={loading}
+          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-xl font-bold hover:scale-105 transition"
         >
-          {loading
-            ? "Processing..."
-            : useAutoCampaign
-            ? "Upload & Start Calling"
-            : "Create Campaign & Upload"}
+          {loading ? "Processing..." : "Create & Start Calling"}
         </button>
 
       </form>

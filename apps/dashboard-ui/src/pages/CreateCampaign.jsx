@@ -14,7 +14,6 @@ const CreateCampaign = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 🔥 VALIDATION
     if (!file) {
       alert("Please upload CSV or Excel file");
       return;
@@ -23,63 +22,41 @@ const CreateCampaign = () => {
     try {
       setLoading(true);
 
-      let campaignId = null;
+      let campaignId;
 
-      // 🟢 CREATE CAMPAIGN ONLY IF MANUAL
-      if (!useAutoCampaign) {
-        const res = await campaignService.createCampaign({
-          name: name || "Manual Campaign",
-          description: description || "Created from UI",
-        });
+      // 1️⃣ CREATE CAMPAIGN
+      const res = await campaignService.createCampaign({
+        name: name || (useAutoCampaign ? "Auto Campaign" : "Manual Campaign"),
+        description: description || "Created from UI",
+      });
 
-        campaignId = res?.data?.campaign?._id;
+      campaignId = res?.data?.campaign?._id;
 
-        if (!campaignId) {
-          throw new Error("Campaign ID not received");
-        }
-      }
+      if (!campaignId) throw new Error("Campaign ID missing");
 
-      // 🟡 AUTO MODE FIX (IMPORTANT)
-      // if campaignId is null → backend MUST support auto-campaign
-      // otherwise fallback create
-      if (!campaignId) {
-        const res = await campaignService.createCampaign({
-          name: "Auto Campaign",
-          description: "Auto generated",
-        });
+      console.log("✅ Campaign Created:", campaignId);
 
-        campaignId = res?.data?.campaign?._id;
-      }
+      // 2️⃣ UPLOAD LEADS
+      await campaignService.uploadPhoneNumbers(campaignId, file);
 
-      // 📤 UPLOAD LEADS
-      const formData = new FormData();
-      formData.append("file", file);
+      console.log("📤 Leads uploaded");
 
-      const uploadRes = await campaignService.uploadPhoneNumbers(
-        campaignId,
-        file
-      );
+      // 3️⃣ IMPORTANT 🔥 START CALLING
+      await campaignService.startCampaign(campaignId);
 
-      alert(
-        `🚀 Success!\nCampaign Ready & ${uploadRes.data.message}`
-      );
+      console.log("📞 Campaign Started (CALLING ACTIVE)");
 
-      // RESET
+      alert("🚀 Campaign Created + Upload Done + Calling Started!");
+
       setName("");
       setDescription("");
       setFile(null);
 
-      // 🔥 GO TO CAMPAIGNS
       navigate("/campaigns");
 
     } catch (err) {
       console.error(err);
-
-      alert(
-        err.response?.data?.error ||
-        err.message ||
-        "Something went wrong"
-      );
+      alert(err.response?.data?.error || err.message || "Error occurred");
     } finally {
       setLoading(false);
     }
@@ -97,28 +74,26 @@ const CreateCampaign = () => {
           🚀 Create Campaign
         </h2>
 
-        {/* AUTO MODE */}
         <label className="flex items-center gap-2 mb-4 text-sm text-gray-300">
           <input
             type="checkbox"
             checked={useAutoCampaign}
             onChange={() => setUseAutoCampaign(!useAutoCampaign)}
           />
-          Use Auto Campaign (system handles everything)
+          Auto Mode
         </label>
 
-        {/* NAME + DESCRIPTION */}
         {!useAutoCampaign && (
           <>
             <input
-              className="w-full p-3 mb-3 rounded bg-white/10 text-white"
+              className="w-full p-3 mb-3 rounded bg-white/10"
               placeholder="Campaign Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
 
             <textarea
-              className="w-full p-3 mb-3 rounded bg-white/10 text-white"
+              className="w-full p-3 mb-3 rounded bg-white/10"
               placeholder="Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -126,28 +101,19 @@ const CreateCampaign = () => {
           </>
         )}
 
-        {/* FILE UPLOAD */}
         <input
           type="file"
           accept=".csv,.xlsx"
           onChange={(e) => setFile(e.target.files[0])}
-          className="w-full mb-4 text-sm"
+          className="w-full mb-4"
         />
 
-        {/* INFO */}
-        <div className="text-xs text-gray-400 mb-4">
-          📌 CSV/Excel must contain phone numbers only<br />
-          📌 System will automatically start calling after upload
-        </div>
-
-        {/* BUTTON */}
         <button
           disabled={loading}
-          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-xl font-bold hover:scale-105 transition"
+          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-xl font-bold"
         >
           {loading ? "Processing..." : "Create & Start Calling"}
         </button>
-
       </form>
     </div>
   );

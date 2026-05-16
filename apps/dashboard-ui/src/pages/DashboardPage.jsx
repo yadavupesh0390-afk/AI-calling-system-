@@ -5,31 +5,42 @@ const DashboardPage = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get('/api/analytics/dashboard', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setStats(response.data.statistics);
-      } catch (error) {
-        console.error('Failed to fetch statistics:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const API_URL = import.meta.env.VITE_API_URL;
 
-    fetchStats();
-  }, []);
+useEffect(() => {
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl text-gray-600">Loading...</div>
-      </div>
-    );
-  }
+      const response = await axios.get(
+        `${API_URL}/analytics/dashboard`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      setStats(response.data.statistics);
+
+    } catch (error) {
+      console.error('Failed to fetch statistics:', error);
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchStats();
+}, []);
+
+if (loading) {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-xl text-gray-600">Loading...</div>
+    </div>
+  );
+}
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">

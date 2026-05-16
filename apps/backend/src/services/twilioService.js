@@ -1,6 +1,6 @@
 const twilio = require('twilio');
 
-const logger = require('../../../shared/utils/logger');
+const logger = require('../utils/logger');
 const { CALLING } = require('../../../shared/constants/leadStatus');
 const validatePhone = require('../../../shared/validators/phoneValidator');
 

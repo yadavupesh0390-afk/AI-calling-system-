@@ -5,9 +5,22 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const XLSX = require('xlsx');
 
+// 🔥 IMPORTANT: CALL QUEUE IMPORT
+const { CallQueue } = require('../queues/callQueue');
+
+/* =========================
+   CREATE CAMPAIGN
+========================= */
 exports.createCampaign = async (req, res, next) => {
   try {
-    const { name, description, ivrScript, voiceSettings, callSettings, followupSettings } = req.body;
+    const {
+      name,
+      description,
+      ivrScript,
+      voiceSettings,
+      callSettings,
+      followupSettings
+    } = req.body;
 
     const campaign = await Campaign.create({
       name,
@@ -26,11 +39,16 @@ exports.createCampaign = async (req, res, next) => {
       message: 'Campaign created successfully',
       campaign
     });
+
   } catch (error) {
     next(error);
   }
 };
 
+/* =========================
+   UPLOAD PHONE NUMBERS
+   + AUTO QUEUE START (FIXED)
+========================= */
 exports.uploadPhoneNumbers = async (req, res, next) => {
   try {
     const { campaignId } = req.params;
@@ -49,21 +67,31 @@ exports.uploadPhoneNumbers = async (req, res, next) => {
 
     if (file.mimetype === 'text/csv') {
       phoneNumbers = await parseCSV(file.path);
-    } else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+    } else if (
+      file.mimetype ===
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ) {
       phoneNumbers = parseExcel(file.path);
     } else {
-      return res.status(400).json({ error: 'Only CSV and Excel files are supported' });
+      return res.status(400).json({
+        error: 'Only CSV and Excel files are supported'
+      });
     }
 
+    // 🔥 CLEAN NUMBERS
     phoneNumbers = phoneNumbers
-      .filter(num => /^\d{10,}$/.test(num.replace(/\D/g, '')))
-      .map(num => num.replace(/\D/g, ''))
+      .map(num => num.toString().replace(/\D/g, ''))
+      .filter(num => /^\d{10,}$/.test(num))
       .filter((num, index, self) => self.indexOf(num) === index);
 
-    campaign.phoneNumbers = [...new Set([...campaign.phoneNumbers, ...phoneNumbers])];
+    // Save to campaign
+    campaign.phoneNumbers = [
+      ...new Set([...campaign.phoneNumbers, ...phoneNumbers])
+    ];
     campaign.totalLeads = campaign.phoneNumbers.length;
     await campaign.save();
 
+    // Save leads
     const leads = phoneNumbers.map(phoneNumber => ({
       campaignId: campaign._id,
       phoneNumber
@@ -73,39 +101,42 @@ exports.uploadPhoneNumbers = async (req, res, next) => {
       if (err.code !== 11000) throw err;
     });
 
+    // 🔥 AUTO CALL QUEUE START (IMPORTANT FIX)
+    const savedLeads = await Lead.find({ campaignId });
+
+    for (const lead of savedLeads) {
+      if (lead.callStatus === 'pending') {
+        await CallQueue.add({
+          leadId: lead._id,
+          campaignId: campaign._id,
+          phoneNumber: lead.phoneNumber
+        }, {
+          attempts: 3,
+          removeOnComplete: true,
+          delay: 2000
+        });
+      }
+    }
+
     fs.unlinkSync(file.path);
+
+    logger.info(`🔥 Call Queue started after upload: ${campaignId}`);
 
     res.json({
       success: true,
-      message: `${phoneNumbers.length} phone numbers uploaded successfully`,
+      message: `${phoneNumbers.length} numbers uploaded & calling started`,
       totalLeads: campaign.phoneNumbers.length
     });
+
   } catch (error) {
     next(error);
   }
 };
 
-const parseCSV = (filePath) => {
-  return new Promise((resolve, reject) => {
-    const results = [];
-    fs.createReadStream(filePath)
-      .pipe(csv())
-      .on('data', (data) => {
-        const phoneNumber = Object.values(data)[0];
-        if (phoneNumber) results.push(phoneNumber);
-      })
-      .on('end', () => resolve(results))
-      .on('error', reject);
-  });
-};
-
-const parseExcel = (filePath) => {
-  const workbook = XLSX.readFile(filePath);
-  const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-  const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-  return data.flat().filter(val => val);
-};
-
+/* =========================
+   START CAMPAIGN
+   + QUEUE TRIGGER FIXED
+========================= */
 exports.startCampaign = async (req, res, next) => {
   try {
     const { campaignId } = req.params;
@@ -120,18 +151,39 @@ exports.startCampaign = async (req, res, next) => {
       return res.status(404).json({ error: 'Campaign not found' });
     }
 
-    logger.info(`Campaign started: ${campaignId}`);
+    // 🔥 TRIGGER CALL QUEUE
+    const leads = await Lead.find({ campaignId });
+
+    for (const lead of leads) {
+      if (lead.callStatus === 'pending') {
+        await CallQueue.add({
+          leadId: lead._id,
+          campaignId,
+          phoneNumber: lead.phoneNumber
+        }, {
+          attempts: 3,
+          removeOnComplete: true,
+          delay: 2000
+        });
+      }
+    }
+
+    logger.info(`🚀 Campaign started + calls queued: ${campaignId}`);
 
     res.json({
       success: true,
-      message: 'Campaign started successfully',
+      message: 'Campaign started & calling initiated',
       campaign
     });
+
   } catch (error) {
     next(error);
   }
 };
 
+/* =========================
+   PAUSE
+========================= */
 exports.pauseCampaign = async (req, res, next) => {
   try {
     const { campaignId } = req.params;
@@ -142,14 +194,16 @@ exports.pauseCampaign = async (req, res, next) => {
       { new: true }
     );
 
-    logger.info(`Campaign paused: ${campaignId}`);
-
     res.json({ success: true, message: 'Campaign paused', campaign });
+
   } catch (error) {
     next(error);
   }
 };
 
+/* =========================
+   RESUME
+========================= */
 exports.resumeCampaign = async (req, res, next) => {
   try {
     const { campaignId } = req.params;
@@ -160,14 +214,16 @@ exports.resumeCampaign = async (req, res, next) => {
       { new: true }
     );
 
-    logger.info(`Campaign resumed: ${campaignId}`);
-
     res.json({ success: true, message: 'Campaign resumed', campaign });
+
   } catch (error) {
     next(error);
   }
 };
 
+/* =========================
+   STOP
+========================= */
 exports.stopCampaign = async (req, res, next) => {
   try {
     const { campaignId } = req.params;
@@ -178,29 +234,36 @@ exports.stopCampaign = async (req, res, next) => {
       { new: true }
     );
 
-    logger.info(`Campaign stopped: ${campaignId}`);
-
     res.json({ success: true, message: 'Campaign stopped', campaign });
+
   } catch (error) {
     next(error);
   }
 };
 
+/* =========================
+   GET SINGLE
+========================= */
 exports.getCampaign = async (req, res, next) => {
   try {
     const { campaignId } = req.params;
 
     const campaign = await Campaign.findById(campaignId);
+
     if (!campaign) {
       return res.status(404).json({ error: 'Campaign not found' });
     }
 
     res.json({ success: true, campaign });
+
   } catch (error) {
     next(error);
   }
 };
 
+/* =========================
+   LIST
+========================= */
 exports.getCampaigns = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
@@ -220,28 +283,62 @@ exports.getCampaigns = async (req, res, next) => {
       campaigns,
       pagination: { page, limit, total }
     });
+
   } catch (error) {
     next(error);
   }
 };
 
+/* =========================
+   DELETE
+========================= */
 exports.deleteCampaign = async (req, res, next) => {
   try {
     const { campaignId } = req.params;
 
     const campaign = await Campaign.findByIdAndDelete(campaignId);
+
     if (!campaign) {
       return res.status(404).json({ error: 'Campaign not found' });
     }
 
     await Lead.deleteMany({ campaignId });
 
-    logger.info(`Campaign deleted: ${campaignId}`);
+    res.json({
+      success: true,
+      message: 'Campaign deleted successfully'
+    });
 
-    res.json({ success: true, message: 'Campaign deleted successfully' });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = exports;
+/* =========================
+   CSV PARSER
+========================= */
+const parseCSV = (filePath) => {
+  return new Promise((resolve, reject) => {
+    const results = [];
+
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on('data', (data) => {
+        const phoneNumber = Object.values(data)[0];
+        if (phoneNumber) results.push(phoneNumber);
+      })
+      .on('end', () => resolve(results))
+      .on('error', reject);
+  });
+};
+
+/* =========================
+   EXCEL PARSER
+========================= */
+const parseExcel = (filePath) => {
+  const workbook = XLSX.readFile(filePath);
+  const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+  const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+  return data.flat().filter(val => val);
+};
